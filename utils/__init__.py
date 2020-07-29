@@ -1327,3 +1327,54 @@ def display_pretty_feature_groupings(feat_groupings, include_preprocessing=False
                 del feat_group['preprocessing_strategy']
     # print(json.dumps(feat_groupings_copy, indent=4))
     display(HTML(f"<pre>{json.dumps(feat_groupings_copy, indent=4)}</pre>"))
+
+
+def histograms(df, consolidate=False, plot_edge=4):
+    feats = df.columns
+    
+    s_html = "<h3>Distributions:</h3>"
+    # s_html += f"<ul><li><b>feature set</b>: {feats}</li></ul>"
+    display(HTML(s_html))
+    
+    n_feats = len(feats)
+    included_feats = []
+    
+    if not consolidate:
+        r_w = 4*plot_edge if n_feats > plot_edge else (n_feats*4 if n_feats > 1 else plot_edge)
+        r_h = plot_edge if n_feats > 4 else (plot_edge if n_feats > 1 else plot_edge)
+        
+        c_n = 4 if n_feats > 4 else n_feats
+        r_n = n_feats/c_n
+        r_n = int(r_n) + (1 if n_feats > 4 and r_n % int(r_n) != 0 else 0)        
+
+        fig = plt.figure(figsize=(r_w, r_h*r_n))
+
+        axes = fig.subplots(r_n, c_n)
+        unused = list(range(0, len(axes.flatten()))) if n_feats > 1 else [0]
+
+        for index, feat in enumerate(feats):
+            ax = fig.add_subplot(r_n, c_n, index+1)
+            sns.distplot(df[feat], ax=ax)
+            plt.xlabel(feat)
+            included_feats.append(feat)
+            unused.remove(index)
+
+        flattened_axes = axes.flatten() if n_feats > 1 else [axes]
+        for u in unused:
+            fig.delaxes(flattened_axes[u])
+
+    else:
+        fig = plt.figure(figsize=(20, 10))
+
+        plt.title("Feature Distributions")
+
+        for index, feat in enumerate(feats):
+            sns.distplot(df[feat], label=feat)
+            included_feats.append(feat)
+
+        plt.legend()
+
+    fig.tight_layout()
+    plt.show();
+
+    return included_feats
